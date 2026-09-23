@@ -1,0 +1,13 @@
+{
+  "name": "organizasyon-paneli",
+  "version": "1.0.0",
+  "description": "Organizasyon Paneli - Android APK",
+  "scripts": {},
+  "dependencies": {
+    "@capacitor/core": "^6.1.0",
+    "@capacitor/android": "^6.1.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.1.0"
+  }
+}

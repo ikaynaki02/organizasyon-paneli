@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Organizasyon Paneli</title>
+<style>
+  :root {
+    --bg: #f7f4f2;
+    --surface: #ffffff;
+    --surface-2: #f0ebe8;
+    --border: #e3dad5;
+    --text: #2b2320;
+    --text-dim: #7a6f6a;
+    --accent: #8a2c4a;
+    --accent-2: #b5546f;
+    --good: #2f7d4f;
+    --good-soft: #e1f2e6;
+    --warn: #a8730b;
+    --warn-soft: #fbedd0;
+    --bad: #b23a3a;
+    --bad-soft: #f9dede;
+    --info: #2b6ca3;
+    --info-soft: #dcecf7;
+    --radius: 14px;
+    --shadow: 0 2px 10px rgba(60,30,40,0.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1613; --surface: #26201d; --surface-2: #2f2723; --border: #3d332e;
+      --text: #f2ebe7; --text-dim: #b3a49d; --accent: #e88aa6; --accent-2: #d16b8a;
+      --good: #6fce93; --good-soft: #203528; --warn: #e3b256; --warn-soft: #3a2f18;
+      --bad: #e77e7e; --bad-soft: #3a2222; --info: #7ec2f2; --info-soft: #1f2f3a;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  #app { max-width: 960px; margin: 0 auto; padding: 0 14px 60px; }
+  header.top { position: sticky; top: 0; background: var(--bg); z-index: 20; padding: 14px 0 8px; border-bottom: 1px solid var(--border); }
+  header.top h1 { font-size: 19px; margin: 0 0 2px; }
+  header.top .sub { color: var(--text-dim); font-size: 12.5px; margin-bottom: 10px; }
+  .toolbar { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+  .btn { border: 1px solid var(--border); background: var(--surface); color: var(--text);
+    padding: 8px 13px; border-radius: 10px; font-size: 13.5px; cursor: pointer; white-space:nowrap; }
+  .btn:hover { border-color: var(--accent-2); }
+  .btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn.primary:hover { background: var(--accent-2); }
+  .btn.danger { color: var(--bad); }
+  .btn.small { padding: 5px 10px; font-size: 12.5px; }
+  nav.tabs { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 2px; }
+  nav.tabs button { background: none; border: none; padding: 9px 12px; font-size: 13.5px;
+    color: var(--text-dim); cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; }
+  nav.tabs button.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+  main { padding-top: 14px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+  @media (max-width: 640px) { .grid3 { grid-template-columns: 1fr; } }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; box-shadow: var(--shadow); }
+  .stat .label { font-size: 12px; color: var(--text-dim); margin-bottom: 6px; }
+  .stat .value { font-size: 21px; font-weight: 700; }
+  .stat.warn .value { color: var(--warn); }
+  .stat.good .value { color: var(--good); }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 12px; box-shadow: var(--shadow); }
+  .card h3 { margin: 0 0 10px; font-size: 14.5px; }
+  .alert { border-radius: 10px; padding: 9px 11px; font-size: 13px; margin-bottom: 8px; }
+  .alert.bad { background: var(--bad-soft); color: var(--bad); }
+  .alert.info { background: var(--info-soft); color: var(--info); }
+  .empty { color: var(--text-dim); font-size: 13px; padding: 10px 2px; }
+  .search { width: 100%; padding: 9px 11px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 13.5px; margin-bottom: 10px; }
+  .event-row { display: flex; align-items: center; gap: 10px; padding: 10px 8px; border-radius: 10px; cursor: pointer; border: 1px solid transparent; }
+  .event-row:hover { background: var(--surface-2); border-color: var(--border); }
+  .event-row .date-chip { min-width: 54px; text-align:center; font-size: 12px; color: var(--text-dim); line-height:1.25; }
+  .event-row .date-chip b { display:block; font-size: 15px; color: var(--text); }
+  .event-row .main { flex: 1; min-width: 0; }
+  .event-row .main .name { font-weight: 600; font-size: 14.5px; }
+  .event-row .main .meta { font-size: 12px; color: var(--text-dim); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .badge { font-size: 11px; padding: 3px 8px; border-radius: 999px; font-weight: 600; white-space:nowrap; }
+  .badge.opsiyon { background: var(--warn-soft); color: var(--warn); }
+  .badge.kapora { background: var(--info-soft); color: var(--info); }
+  .badge.kesin { background: var(--good-soft); color: var(--good); }
+  .badge.tamamlandi { background: var(--surface-2); color: var(--text-dim); }
+  .badge.iptal { background: var(--bad-soft); color: var(--bad); }
+  .row-contract-btn { flex: 0 0 auto; padding: 5px 8px; font-size: 14px; line-height:1; }
+  .undo-toast { position:fixed; bottom:18px; left:50%; transform:translateX(-50%); background:#222; color:#fff;
+    padding:11px 16px; border-radius:10px; display:flex; gap:14px; align-items:center; font-size:13.5px;
+    z-index:500; box-shadow:0 4px 14px rgba(0,0,0,.3); }
+  .undo-toast button { background:#fff; color:#222; border:none; padding:6px 12px; border-radius:6px;
+    font-weight:600; cursor:pointer; font-size:13px; }
+  .balance { font-size: 12.5px; font-weight: 600; white-space:nowrap; }
+  .balance.zero { color: var(--good); }
+  .balance.pos { color: var(--warn); }
+  .balance.neg { color: var(--info); }
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); display:flex; align-items:flex-end; justify-content:center; z-index: 100; }
+  @media (min-width: 720px) { .overlay { align-items:center; } }
+  .modal { background: var(--surface); width: 100%; max-width: 640px; max-height: 92vh; overflow-y:auto; border-radius: 16px 16px 0 0; padding: 16px; }
+  @media (min-width: 720px) { .modal { border-radius: 16px; } }
+  .modal h2 { margin: 0 0 12px; font-size: 17px; }
+  .field { margin-bottom: 11px; }
+  .field label { display:block; font-size: 12px; color: var(--text-dim); margin-bottom: 4px; }
+  .field input, .field select, .field textarea { width: 100%; padding: 9px 10px; border-radius: 9px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 14px; font-family: inherit; }
+  .row2 { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .row3 { display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  @media (max-width: 500px) { .row3 { grid-template-columns: 1fr; } }
+  .section-title { font-size: 13px; font-weight: 700; color: var(--accent); margin: 16px 0 8px; text-transform: uppercase; letter-spacing:.4px; }
+  .inv-row { display:flex; gap:6px; align-items:center; margin-bottom:6px; flex-wrap: wrap; }
+  .inv-row input[type=text] { flex: 1; min-width: 100px; }
+  .inv-row input[type=number] { width: 60px; }
+  .inv-row label.chk { display:flex; align-items:center; gap:3px; font-size:11px; color:var(--text-dim); white-space:nowrap; }
+  .modal-actions { display:flex; gap:8px; margin-top:16px; justify-content:space-between; }
+  .modal-actions .right { display:flex; gap:8px; }
+  .close-x { position:absolute; top:10px; right:14px; background:none; border:none; font-size:20px; color:var(--text-dim); cursor:pointer; }
+  .modal-wrap { position:relative; }
+  .balance-box { background: var(--surface-2); border-radius: 10px; padding: 10px; font-size: 13.5px; margin-top: 6px; }
+  .balance-box b { color: var(--accent); }
+  footer.note { text-align:center; color: var(--text-dim); font-size: 11.5px; margin-top: 20px; }
+  #importFile { display:none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="top">
+    <h1>💍 Organizasyon Paneli</h1>
+    <div class="sub" id="dbStatus">Veriler bu tarayıcıda kalıcı olarak saklanıyor (localStorage).</div>
+    <div class="toolbar">
+      <button class="btn primary" id="btnNew">+ Yeni Etkinlik</button>
+      <button class="btn small" id="btnBackup">⤓ Yedek indir (JSON)</button>
+      <button class="btn small" id="btnImportBtn">⤒ Yedekten geri yükle</button>
+      <input type="file" id="importFile" accept="application/json">
+    </div>
+    <nav class="tabs" id="tabs"></nav>
+  </header>
+  <main id="content"></main>
+  <footer class="note">Veriler yalnızca bu dosyayı açtığınız tarayıcı/cihazda saklanır — düzenli olarak yedek indirmeniz önerilir.</footer>
+</div>
+<div id="modalRoot"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  const STORAGE_KEY = "organizasyon_events_v1";
+  const STATUS = {
+    opsiyon: "Opsiyonlu",
+    kapora: "Kapora Alındı",
+    kesin: "Kesinleşti",
+    tamamlandi: "Tamamlandı",
+    iptal: "İptal"
+  };
+  const ACTIVE_STATUSES = ["opsiyon", "kapora", "kesin"];
+  const COMPANY_NAME = "ZEYNA ORGANİZASYON";
+  const DEFAULT_CONTRACT_NOTE = "Kalan bakiye organizasyon günü tahsil edilecektir.";
+  const DEFAULT_HIZMET_KALEMLERI = ["Arka Plan Modeli", "Giriş Yolu", "Zemin", "Karşılama"];
+
+  let events = [];
+  let state = { tab: "panel", search: "", modal: null };
+
+  function uid() { return "ev_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+  const STOCK_KEY = "organizasyon_stock_v1";
+  let stock = [];
+
+  // Eski sürümde extraPayments tek bir sayıydı (kına/düğün günü elden alınan tüm ödemeler
+  // toplu tutuluyordu). Yeni sürümde payments = [{date, amount, note}] tarihli bir defter.
+  // Geriye dönük uyumluluk için eski sayısal alanı tek satırlık bir ödeme kaydına çeviriyoruz.
+  function migrateEvent(ev) {
+    if (!Array.isArray(ev.payments)) {
+      const legacy = Number(ev.extraPayments) || 0;
+      ev.payments = legacy !== 0
+        ? [{ date: ev.date || todayStr(), amount: legacy, note: "Eski kayıttan aktarıldı" }]
+        : [];
+    }
+    delete ev.extraPayments;
+    if (!Array.isArray(ev.inventory)) ev.inventory = [];
+    if (!Array.isArray(ev.hizmetDetaylari)) ev.hizmetDetaylari = [];
+    if (typeof ev.contractNote !== "string") ev.contractNote = DEFAULT_CONTRACT_NOTE;
+    if (!Array.isArray(ev.contractHistory)) ev.contractHistory = [];
+    return ev;
+  }
+
+  function loadEvents() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      events = raw ? JSON.parse(raw) : [];
+      events.forEach(migrateEvent);
+    } catch (e) {
+      events = [];
+      document.getElementById("dbStatus").textContent = "⚠ Kayıtlı veriler okunamadı, boş başlatıldı.";
+    }
+    try {
+      const rawStock = localStorage.getItem(STOCK_KEY);
+      stock = rawStock ? JSON.parse(rawStock) : [];
+    } catch (e) {
+      stock = [];
+    }
+  }
+  function persist() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+    } catch (e) {
+      alert("Veriler kaydedilemedi: tarayıcı depolama alanı dolu olabilir.");
+    }
+  }
+  function persistStock() {
+    try {
+      localStorage.setItem(STOCK_KEY, JSON.stringify(stock));
+    } catch (e) {
+      alert("Stok verileri kaydedilemedi: tarayıcı depolama alanı dolu olabilir.");
+    }
+  }
+
+  // ÖNEMLİ: new Date().toISOString() UTC'ye çevirir. Türkiye UTC+3 olduğu için bu, addDays'te
+  // HER ÇAĞRIDA (sadece gece yarısına yakın değil, günün her saatinde) bir gün eksik sonuç
+  // veriyordu; todayStr'de ise gece 00:00–03:00 arası "bugün"ü bir gün geriden gösteriyordu.
+  // Yerel tarih bileşenlerini (getFullYear/getMonth/getDate) kullanmak bu kaymayı ortadan kaldırır.
+  function pad2(n) { return String(n).padStart(2, "0"); }
+  function toDateStr(d) { return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; }
+  function todayStr() { return toDateStr(new Date()); }
+  function monthKeyOf(dateStr) { return (dateStr || "").slice(0, 7); }
+  function addDays(dateStr, n) {
+    const d = new Date(dateStr + "T00:00:00");
+    d.setDate(d.getDate() + n);
+    return toDateStr(d);
+  }
+  function fmtMoney(n) {
+    n = Math.round(Number(n) || 0);
+    return n.toLocaleString("tr-TR") + " ₺";
+  }
+  // Bu uygulamada kuruş / ondalık tutar YOK — her zaman düz TL (örn. 5000, 5150, 8235).
+  // Kullanıcı "26000" da yazabilir, alışkanlıkla binlik ayraçlı "26.000" da yazabilir;
+  // ikisi de aynı şekilde 26000 olarak okunmalı. Bu yüzden nokta her zaman binlik ayracı
+  // sayılıp siliniyor. Biri yine de eski alışkanlıkla virgüllü kuruş yazarsa ("1500,50"),
+  // kuruş desteklenmediği için virgülden sonraki kısım tamamen atılır (1500,50 -> 1500).
+  // Yalnızca harf/anlamsız girişte NaN döner (çağıran taraf bunu yakalayıp uyarı verir).
+  function parseMoneyInput(raw) {
+    if (raw == null) return 0;
+    let s = String(raw).trim();
+    if (!s) return 0;
+    s = s.replace(/[^0-9.,-]/g, "");
+    if (!s) return NaN;
+    const commaIdx = s.indexOf(",");
+    if (commaIdx > -1) s = s.slice(0, commaIdx); // kuruş yok: virgülden sonrası silinir
+    s = s.replace(/\./g, ""); // nokta = binlik ayracı, sadece silinir
+    if (!s || s === "-") return NaN;
+    const n = parseInt(s, 10);
+    return Number.isFinite(n) ? n : NaN;
+  }
+  // Input alanına basılırken binlik ayraçsız, düz tam sayı göstermek için (düzenlerken
+  // karışıklık olmasın diye) — parseMoneyInput ile bu format her zaman sorunsuz geri okunur.
+  function fmtAmountForInput(n) {
+    return String(Math.round(Number(n)) || 0);
+  }
+  // Kaydet / Sözleşme / Saha Fişi butonlarına basılmadan önce çağrılır. readFormIntoDraft()
+  // geçersiz bir tutarı sessizce eski değere düşürdüğü için, kullanıcı "1.500,50" yerine
+  // gerçekten anlamsız bir şey yazmışsa (örn. harf) bunu burada yakalayıp uyarıyoruz —
+  // aksi halde kullanıcı fark etmeden yanlış bir tutarla devam edebilirdi.
+  function invalidMoneyFieldMessage() {
+    const totalRaw = val("f_totalAmount").trim();
+    if (totalRaw && !Number.isFinite(parseMoneyInput(totalRaw))) {
+      return "Toplam Anlaşılan Tutar alanı geçerli bir sayı olarak tanınamadı (örn: 26000 veya 26.000). Lütfen düzeltin.";
+    }
+    const depositRaw = val("f_deposit").trim();
+    if (depositRaw && !Number.isFinite(parseMoneyInput(depositRaw))) {
+      return "Alınan Kapora alanı geçerli bir sayı olarak tanınamadı (örn: 5000 veya 5.000). Lütfen düzeltin.";
+    }
+    return null;
+  }
+  function fmtDateShort(dateStr) {
+    if (!dateStr) return { day: "-", mon: "", dow: "" };
+    const d = new Date(dateStr + "T00:00:00");
+    const days = ["Paz","Pzt","Sal","Çar","Per","Cum","Cmt"];
+    return { day: d.getDate(), mon: d.toLocaleDateString("tr-TR",{month:"short"}), dow: days[d.getDay()] };
+  }
+  function fmtDateHuman(dateStr) {
+    if (!dateStr) return "-";
+    const d = new Date(dateStr + "T00:00:00");
+    return d.toLocaleDateString("tr-TR", { day: "2-digit", month: "long", year: "numeric" });
+  }
+  // Gece yarısını geçen etkinlikleri (örn. 23:00 -> 02:00) doğru kıyaslamak için tarih+saat
+  // birleşik "mutlak" zaman damgasına çevrilir; bitiş <= başlangıç ise bitiş ertesi güne
+  // sarkmış sayılır. Bu, aynı "date" alanına sahip olmayan ama gerçek zamanda çakışan
+  // etkinlikleri de (örn. 22 Eylül 23:00-02:00 ile 23 Eylül 01:00-03:00) yakalar — sadece
+  // "o.date === ev.date" ile filtrelemek bu tür sınır-gün çakışmalarını kaçırırdı.
+  function toAbsoluteRange(dateStr, timeStart, timeEnd) {
+    if (!dateStr || !timeStart || !timeEnd) return null;
+    const start = new Date(dateStr + "T" + timeStart + ":00");
+    let end = new Date(dateStr + "T" + timeEnd + ":00");
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) return null;
+    if (end.getTime() <= start.getTime()) end = new Date(end.getTime() + 24 * 60 * 60 * 1000);
+    return { start: start.getTime(), end: end.getTime() };
+  }
+  function rangesOverlap(a, b) {
+    return !!a && !!b && a.start < b.end && b.start < a.end;
+  }
+  function normVenue(v) { return (v || "").trim().toLocaleLowerCase("tr-TR"); }
+  // Türkçe'de "İ"/"I" harflerinin standart toLowerCase() ile yanlış küçülmesini önlemek için
+  // (örn. "İhsan".toLowerCase() -> "i̇hsan" olur, "ihsan" değil) arama her yerde bunu kullanmalı.
+  function trLower(s) { return (s == null ? "" : String(s)).toLocaleLowerCase("tr-TR"); }
+  function totalPayments(ev) {
+    return (ev.payments || []).reduce((s, p) => s + (Number(p.amount) || 0), 0);
+  }
+  function remainingOf(ev) {
+    const total = Number(ev.totalAmount) || 0;
+    const dep = Number(ev.deposit) || 0;
+    const extra = totalPayments(ev);
+    return total - dep - extra;
+  }
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[c]));
+  }
+
+  // Aynı saatte çakışan iki etkinlik, mekanları farklıysa organizatör için "ikinci iş" demektir
+  // (bilgi amaçlı), aynı mekandaysa fiziksel olarak imkansızdır (kritik). Mekan girilmemişse
+  // ayırt edemeyeceğimiz için güvenli tarafta kalıp kritik sayıyoruz.
+  function isSameVenueConflict(a, b) {
+    const va = normVenue(a.venue), vb = normVenue(b.venue);
+    if (!va || !vb) return true;
+    return va === vb;
+  }
+  // "Görevli Ekip / Araç" alanı virgülle ayrılmış serbest metin; aynı isim iki etkinlikte
+  // aynı anda geçiyorsa (örn. aynı fotoğrafçı ya da aynı minibüs plakası), mekan farklı olsa
+  // bile fiziksel olarak imkansızdır — bu yüzden mekan çakışmasından bağımsız ayrıca kontrol edilir.
+  function teamMembersOf(ev) {
+    return (ev.team || "").split(",").map(s => trLower(s.trim())).filter(Boolean);
+  }
+  function sharedTeamMembers(a, b) {
+    const bSet = new Set(teamMembersOf(b));
+    return teamMembersOf(a).filter(m => bSet.has(m));
+  }
+  function findConflicts(ev, excludeId) {
+    const rangeA = toAbsoluteRange(ev.date, ev.timeStart, ev.timeEnd);
+    if (!rangeA) return [];
+    return events
+      .filter(o => o.id !== excludeId && o.status !== "iptal")
+      .map(o => ({ o, rangeB: toAbsoluteRange(o.date, o.timeStart, o.timeEnd) }))
+      .filter(({ rangeB }) => rangesOverlap(rangeA, rangeB))
+      .map(({ o }) => ({ ...o, sameVenue: isSameVenueConflict(ev, o), sharedTeam: sharedTeamMembers(ev, o) }));
+  }
+  // Aynı gün birden fazla etkinlik aynı kritik malzemeyi (örn. Napolyon sandalye) rezerve
+  // edebilir. Master stok listesindeki toplam adetle kıyaslayıp aşım varsa uyarı üretir.
+  function stockShortagesFor(evList) {
+    if (!stock.length) return [];
+    const byDateItem = {};
+    evList.forEach(e => {
+      (e.inventory || []).forEach(item => {
+        const key = normVenue(item.name);
+        if (!key) return;
+        const q = Number(item.qty) || 0;
+        if (!byDateItem[e.date]) byDateItem[e.date] = {};
+        byDateItem[e.date][key] = (byDateItem[e.date][key] || 0) + q;
+      });
+    });
+    const shortages = [];
+    Object.keys(byDateItem).sort().forEach(date => {
+      Object.keys(byDateItem[date]).forEach(key => {
+        const stockItem = stock.find(s => normVenue(s.name) === key);
+        if (!stockItem) return;
+        const total = Number(stockItem.total) || 0;
+        const need = byDateItem[date][key];
+        if (need > total) shortages.push({ date, name: stockItem.name, total, need });
+      });
+    });
+    return shortages;
+  }
+  function formatShortage(s) {
+    return `${fmtDateHuman(s.date)}: "${esc(s.name)}" için ${s.need} adet talep var, depoda ${s.total} adet var (${s.need - s.total} adet eksik).`;
+  }
+  function stockWarningsFor(evList) { return stockShortagesFor(evList).map(formatShortage); }
+
+  function allConflictWarnings() {
+    const critical = [];
+    const info = [];
+    const seen = new Set();
+    for (const ev of events) {
+      if (ev.status === "iptal") continue;
+      const conflicts = findConflicts(ev, ev.id);
+      for (const c of conflicts) {
+        const key = [ev.id, c.id].sort().join("|");
+        if (seen.has(key)) continue;
+        seen.add(key);
+        const hasSharedTeam = (c.sharedTeam || []).length > 0;
+        const isCritical = c.sameVenue || hasSharedTeam;
+        const target = isCritical ? critical : info;
+        let label;
+        if (c.sameVenue) label = "Kritik – Aynı Mekan Çakışması: ";
+        else if (hasSharedTeam) label = `Kritik – Aynı Ekip/Araç Çakışması (${c.sharedTeam.map(esc).join(", ")}): `;
+        else label = "Bilgi – Farklı Mekan / İkinci İş: ";
+        target.push(
+          label +
+          `${fmtDateHuman(ev.date)} günü ${ev.timeStart || "?"}–${ev.timeEnd || "?"} arası ` +
+          `"${esc(ev.coupleNames || "İsimsiz")}" ile "${esc(c.coupleNames || "İsimsiz")}" çakışıyor` +
+          (c.sameVenue ? "." : ` (${esc(ev.venue || "mekan yok")} / ${esc(c.venue || "mekan yok")}).`)
+        );
+      }
+    }
+    return { critical, info };
+  }
+
+  function saveEvent(draft) {
+    // draft.id burada kalıcı olarak atanır (mutasyon), böylece aynı taslak üzerinden
+    // (modal kapanmadan) birden fazla kez kaydetme/sözleşme oluşturma yapılırsa
+    // her seferinde aynı etkinlik güncellenir, kopya kayıt oluşmaz.
+    if (!draft.id) { draft.id = uid(); draft.createdAt = Date.now(); }
+    if (!Array.isArray(draft.contractHistory)) draft.contractHistory = [];
+    const idx = events.findIndex(e => e.id === draft.id);
+    if (idx >= 0) events[idx] = { ...draft };
+    else events.push({ ...draft });
+    persist();
+    render();
+  }
+  function deleteEvent(id) {
+    const idx = events.findIndex(e => e.id === id);
+    if (idx < 0) return;
+    const removed = events[idx];
+    events.splice(idx, 1);
+    persist();
+    render();
+    showUndoToast(removed, idx);
+  }
+  // Silme sonrası kaza ile "Sil"e basmanın bedelini hafifletmek için kısa süreli geri alma
+  // imkanı: kayıt hemen storage'dan silinir (persist edilir) ama JS belleğinde tutulup
+  // "Geri Al" ile aynı konumuna geri eklenebilir. Süre dolunca/toast kapanınca silme kalıcılaşır.
+  let undoTimer = null;
+  function clearUndoToast() {
+    if (undoTimer) { clearTimeout(undoTimer); undoTimer = null; }
+    const el = document.getElementById("undoToast");
+    if (el) el.remove();
+  }
+  function showUndoToast(removedEvent, index) {
+    clearUndoToast();
+    const bar = document.createElement("div");
+    bar.className = "undo-toast";
+    bar.id = "undoToast";
+    bar.innerHTML = `<span>"${esc(removedEvent.coupleNames || "Etkinlik")}" silindi.</span><button id="undoBtn" type="button">Geri Al</button>`;
+    document.body.appendChild(bar);
+    document.getElementById("undoBtn").onclick = () => {
+      events.splice(Math.min(index, events.length), 0, removedEvent);
+      persist();
+      render();
+      clearUndoToast();
+    };
+    undoTimer = setTimeout(clearUndoToast, 8000);
+  }
+  function updateInventory(eventId, newInventory) {
+    const ev = events.find(e => e.id === eventId);
+    if (ev) ev.inventory = newInventory;
+    persist();
+    render();
+  }
+
+  function doBackup() {
+    const payload = JSON.stringify({ events, stock }, null, 2);
+    const blob = new Blob([payload], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "organizasyon-yedek-" + todayStr() + ".json";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  }
+
+  // Sözleşme çıktısı: harici kütüphane kullanmadan, tarayıcının yerleşik yazdırma
+  // diyaloğu üzerinden (Hedef: "PDF olarak kaydet") PDF üretimi sağlanır.
+  //
+  // Sözleşme her zaman bir "snapshot" (anlık görüntü) üzerinden üretilir: buton her
+  // basıldığında o anki bilgiler kalıcı olarak etkinliğin contractHistory listesine
+  // eklenir ve numaralandırılır. Böylece sonradan tutar/hizmet detayı değişse bile
+  // önceden üretilmiş bir sözleşme her zaman üretildiği andaki hâliyle tekrar açılabilir.
+  function buildSnapshotFromEvent(ev) {
+    const total = Number(ev.totalAmount) || 0;
+    const deposit = Number(ev.deposit) || 0;
+    const extra = totalPayments(ev);
+    return {
+      id: uid(),
+      createdAt: Date.now(),
+      coupleNames: ev.coupleNames,
+      phone: ev.phone,
+      venue: ev.venue,
+      date: ev.date,
+      timeStart: ev.timeStart,
+      timeEnd: ev.timeEnd,
+      hizmetDetaylari: (ev.hizmetDetaylari || []).map(i => ({ label: i.label, value: i.value })),
+      contractNote: (ev.contractNote != null && ev.contractNote !== "") ? ev.contractNote : DEFAULT_CONTRACT_NOTE,
+      totalAmount: total,
+      deposit: deposit,
+      extraPayments: extra,
+      remaining: total - deposit - extra,
+    };
+  }
+
+  // ev nesnesine (kalıcı events dizisindeki veya draft'taki) yeni bir sözleşme
+  // kaydı ekler, numarasını atar, kaydeder ve snapshot'ı döndürür.
+  function addContractSnapshot(ev) {
+    if (!Array.isArray(ev.contractHistory)) ev.contractHistory = [];
+    const snapshot = buildSnapshotFromEvent(ev);
+    snapshot.no = ev.contractHistory.length + 1;
+    ev.contractHistory.push(snapshot);
+    const idx = events.findIndex(e => e.id === ev.id);
+    if (idx >= 0) events[idx].contractHistory = ev.contractHistory;
+    persist();
+    return snapshot;
+  }
+
+  function buildContractHTML(snap) {
+    const items = (snap.hizmetDetaylari || []).filter(i => (i.label || "").trim() || (i.value || "").trim());
+    const createdLabel = snap.createdAt
+      ? new Date(snap.createdAt).toLocaleString("tr-TR", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit" })
+      : "";
+    return `<!DOCTYPE html>
+<html lang="tr"><head><meta charset="UTF-8">
+<title>Sözleşme - ${esc(snap.coupleNames || "Müşteri")}${snap.no ? " - No " + snap.no : ""}</title>
+<style>
+  @page { size: A4; margin: 15mm; }
+  body { font-family: Georgia, "Times New Roman", serif; color: #222; max-width: 700px; margin: 40px auto; padding: 0 24px 60px; line-height: 1.6; }
+  h1 { text-align:center; font-size:21px; letter-spacing:1px; margin: 0 0 2px; }
+  h2 { text-align:center; font-size:14.5px; font-weight:600; margin: 0 0 6px; color:#555; letter-spacing:.3px; }
+  .contract-no { text-align:center; font-size:11.5px; color:#999; margin-bottom:22px; }
+  .meta { margin: 0 0 22px; font-size:14px; }
+  .meta div { margin-bottom:6px; }
+  .section-title { font-weight:700; font-size:13px; text-transform:uppercase; letter-spacing:.5px;
+    margin: 22px 0 10px; border-bottom:1px solid #ccc; padding-bottom:5px; color:#333; }
+  ul { margin:0; padding-left:20px; }
+  li { margin-bottom:5px; font-size:14px; }
+  .fin-row { display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px dashed #ddd; font-size:14px; }
+  .fin-row b { font-weight:700; }
+  .fin-row.total b { color:#8a2c4a; }
+  .note { margin-top:18px; font-size:12.5px; color:#555; font-style:italic; }
+  .sign { display:flex; justify-content:space-between; margin-top:70px; font-size:13px; }
+  .sign div { width:44%; text-align:center; border-top:1px solid #333; padding-top:6px; }
+  .print-actions { text-align:center; margin-bottom:26px; }
+  .print-actions button { font-size:13.5px; padding:9px 16px; border-radius:8px; border:1px solid #8a2c4a;
+    background:#8a2c4a; color:#fff; cursor:pointer; }
+  footer.gen-info { text-align:center; font-size:10.5px; color:#aaa; margin-top:40px; }
+  @media print { .print-actions { display:none; } body { margin:0; padding:20px; } }
+</style></head>
+<body>
+  <div class="print-actions"><button onclick="window.print()">🖨 Yazdır / PDF Olarak Kaydet</button></div>
+  <h1>${esc(COMPANY_NAME)}</h1>
+  <h2>SİPARİŞ VE SÖZLEŞME FORMU</h2>
+  ${snap.no ? `<div class="contract-no">Sözleşme No: ${snap.no}${createdLabel ? " · Oluşturulma: " + esc(createdLabel) : ""}</div>` : ""}
+  <div class="meta">
+    <div><b>Müşteri Adı:</b> ${esc(snap.coupleNames || "-")}</div>
+    ${snap.phone ? `<div><b>Telefon:</b> ${esc(snap.phone)}</div>` : ""}
+    ${snap.venue ? `<div><b>Mekan:</b> ${esc(snap.venue)}</div>` : ""}
+    <div><b>Tarih:</b> ${fmtDateHuman(snap.date)}${(snap.timeStart || snap.timeEnd) ? ` · ${esc(snap.timeStart||"?")}–${esc(snap.timeEnd||"?")}` : ""}</div>
+  </div>
+  <div class="section-title">Hizmet Detayları</div>
+  ${items.length
+    ? `<ul>${items.map(i => `<li>${i.label ? `<b>${esc(i.label)}:</b> ` : ""}${esc(i.value)}</li>`).join("")}</ul>`
+    : `<div style="font-size:13px; color:#777;">Hizmet kalemi girilmedi.</div>`}
+  <div class="section-title">Finansal Detaylar</div>
+  <div class="fin-row"><span>Toplam Anlaşılan Tutar:</span><b>${fmtMoney(snap.totalAmount)}</b></div>
+  <div class="fin-row"><span>Alınan Kapora:</span><b>${fmtMoney(snap.deposit)}</b></div>
+  ${snap.extraPayments ? `<div class="fin-row"><span>Ek Ödemeler (Toplam):</span><b>${fmtMoney(snap.extraPayments)}</b></div>` : ""}
+  <div class="fin-row total"><span>Kalan Bakiye:</span><b>${fmtMoney(snap.remaining)}</b></div>
+  <div class="note">Not: ${esc(snap.contractNote || DEFAULT_CONTRACT_NOTE)}</div>
+  <div class="sign">
+    <div>Müşteri İmza</div>
+    <div>${esc(COMPANY_NAME)}</div>
+  </div>
+  ${snap.no ? `<footer class="gen-info">Bu belge sözleşme kaydı No ${snap.no} olarak sistemde saklanmıştır.</footer>` : ""}
+</body></html>`;
+  }
+
+  function openContractWindow(snap) {
+    const html = buildContractHTML(snap);
+    const w = window.open("", "_blank");
+    if (!w) { alert("Yeni pencere açılamadı. Tarayıcınızın açılır pencere engelleyicisini kontrol edin."); return; }
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+    w.focus();
+  }
+
+  // Listeden (modal açmadan) doğrudan sözleşme üretimi için.
+  function quickGenerateContract(eventId) {
+    const ev = events.find(e => e.id === eventId);
+    if (!ev) return;
+    const snapshot = addContractSnapshot(ev);
+    render();
+    openContractWindow(snapshot);
+  }
+
+  // Saha Çıkış Fişi: müşteri sözleşmesinden ayrı olarak, sahaya giden ekibe verilecek
+  // malzeme/teslim-tutanağı belgesi. Sözleşme gibi numaralı bir "snapshot" değildir —
+  // operasyonel bir kontrol listesidir, o an etkinlikte kayıtlı envanterden üretilir.
+  function buildFieldSlipHTML(ev) {
+    const inv = ev.inventory || [];
+    return `<!DOCTYPE html>
+<html lang="tr"><head><meta charset="UTF-8">
+<title>Saha Çıkış Fişi - ${esc(ev.coupleNames || "Müşteri")}</title>
+<style>
+  @page { size: A4; margin: 15mm; }
+  body { font-family: Arial, Helvetica, sans-serif; color:#222; font-size:13px; line-height:1.5; margin:0; padding:24px; }
+  h1 { font-size:17px; margin:0 0 2px; }
+  h2 { font-size:12.5px; font-weight:600; color:#555; margin:0 0 18px; letter-spacing:.3px; }
+  .meta-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px 24px; margin-bottom:18px; font-size:13px; }
+  .meta-grid div b { display:inline-block; min-width:110px; }
+  table { width:100%; border-collapse:collapse; margin-bottom:22px; }
+  th, td { border:1px solid #999; padding:6px 8px; font-size:12.5px; text-align:left; }
+  th { background:#eee; }
+  .chk-cell { text-align:center; width:80px; }
+  .sign-row { display:flex; justify-content:space-between; margin-top:60px; }
+  .sign-row div { width:30%; text-align:center; border-top:1px solid #333; padding-top:6px; font-size:12px; }
+  .print-actions { text-align:center; margin-bottom:20px; }
+  .print-actions button { font-size:13.5px; padding:9px 16px; border-radius:8px; border:1px solid #2b6ca3;
+    background:#2b6ca3; color:#fff; cursor:pointer; }
+  @media print { .print-actions { display:none; } body { padding:0; } }
+</style></head>
+<body>
+  <div class="print-actions"><button onclick="window.print()">🖨 Yazdır / PDF Olarak Kaydet</button></div>
+  <h1>${esc(COMPANY_NAME)}</h1>
+  <h2>SAHA ÇIKIŞ FİŞİ / TESLİM TUTANAĞI</h2>
+  <div class="meta-grid">
+    <div><b>Müşteri:</b> ${esc(ev.coupleNames || "-")}</div>
+    <div><b>Etkinlik Tarihi:</b> ${fmtDateHuman(ev.date)}</div>
+    <div><b>Mekan:</b> ${esc(ev.venue || "-")}</div>
+    <div><b>Saat:</b> ${esc(ev.timeStart || "?")}–${esc(ev.timeEnd || "?")}</div>
+    <div><b>Ekip / Araç:</b> ${esc(ev.team || "-")}</div>
+    <div><b>Fiş Düzenlenme:</b> ${fmtDateHuman(todayStr())}</div>
+  </div>
+  <table>
+    <thead><tr><th>Malzeme</th><th class="chk-cell">Adet</th><th class="chk-cell">Yüklendi</th><th class="chk-cell">Sahada Teslim</th><th class="chk-cell">Depoya Döndü</th></tr></thead>
+    <tbody>
+      ${inv.length ? inv.map(i => `
+        <tr><td>${esc(i.name || "-")}</td><td class="chk-cell">${esc(i.qty != null ? i.qty : "")}</td>
+        <td class="chk-cell">☐</td><td class="chk-cell">☐</td><td class="chk-cell">☐</td></tr>
+      `).join("") : `<tr><td colspan="5" style="text-align:center; color:#777;">Malzeme listesi girilmemiş.</td></tr>`}
+    </tbody>
+  </table>
+  <div class="sign-row">
+    <div>Teslim Eden (Depo)</div>
+    <div>Sahaya Götüren (Ekip)</div>
+    <div>Depoya Teslim Alan</div>
+  </div>
+</body></html>`;
+  }
+
+  function openFieldSlipWindow(ev) {
+    const html = buildFieldSlipHTML(ev);
+    const w = window.open("", "_blank");
+    if (!w) { alert("Yeni pencere açılamadı. Tarayıcınızın açılır pencere engelleyicisini kontrol edin."); return; }
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+    w.focus();
+  }
+
+  // Listeden (modal açmadan) doğrudan saha fişi üretimi için — mevcut kayıtlı envanterle çalışır.
+  function quickGenerateFieldSlip(eventId) {
+    const ev = events.find(e => e.id === eventId);
+    if (!ev) return;
+    openFieldSlipWindow(ev);
+  }
+
+  function upsertStockItem(item) {
+    const key = normVenue(item.name);
+    if (!key) return;
+    const idx = stock.findIndex(s => normVenue(s.name) === key);
+    if (idx >= 0) stock[idx] = { name: item.name, total: Number(item.total) || 0 };
+    else stock.push({ name: item.name, total: Number(item.total) || 0 });
+  }
+
+  function doImport(file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(reader.result);
+        // Eski yedekler düz bir dizi (sadece etkinlikler) idi; yeni format {events, stock} objesi.
+        const isLegacyArray = Array.isArray(parsed);
+        const parsedEvents = isLegacyArray ? parsed : parsed.events;
+        const parsedStock = isLegacyArray ? [] : (parsed.stock || []);
+        if (!Array.isArray(parsedEvents)) throw new Error("format");
+        const overwrite = confirm(
+          "Mevcut verilerin ÜZERİNE YAZILSIN mı?\n\nTamam = üzerine yaz (mevcut veriler silinir)\nİptal = mevcut verilere EKLE"
+        );
+        if (overwrite) {
+          events = parsedEvents;
+          if (!isLegacyArray) stock = parsedStock;
+        } else {
+          const existingIds = new Set(events.map(e => e.id));
+          parsedEvents.forEach(e => {
+            if (!e.id || existingIds.has(e.id)) e.id = uid();
+            events.push(e);
+          });
+          parsedStock.forEach(upsertStockItem);
+        }
+        events.forEach(migrateEvent);
+        persist();
+        persistStock();
+        render();
+        alert("İçe aktarma tamamlandı.");
+      } catch (e) {
+        alert("Dosya okunamadı. Geçerli bir yedek JSON dosyası seçin.");
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function bindStaticEvents() {
+    document.getElementById("btnNew").onclick = () => openModal("new");
+    document.getElementById("btnBackup").onclick = doBackup;
+    const importBtn = document.getElementById("btnImportBtn");
+    const importFile = document.getElementById("importFile");
+    importBtn.onclick = () => importFile.click();
+    importFile.onchange = () => {
+      if (importFile.files[0]) doImport(importFile.files[0]);
+      importFile.value = "";
+    };
+  }
+
+  const TABS = [
+    { id: "panel", label: "Panel" },
+    { id: "etkinlikler", label: "Etkinlikler" },
+    { id: "envanter", label: "Envanter" },
+    { id: "arsiv", label: "Arşiv" },
+  ];
+
+  function render() {
+    renderTabs();
+    const content = document.getElementById("content");
+    if (state.tab === "panel") content.innerHTML = renderPanel();
+    else if (state.tab === "etkinlikler") content.innerHTML = renderEtkinlikler();
+    else if (state.tab === "envanter") content.innerHTML = renderEnvanter();
+    else content.innerHTML = renderArsiv();
+    bindContentEvents();
+    renderModal();
+  }
+
+  function renderTabs() {
+    const nav = document.getElementById("tabs");
+    nav.innerHTML = TABS.map(t =>
+      `<button data-tab="${t.id}" class="${state.tab === t.id ? "active" : ""}">${t.label}</button>`
+    ).join("");
+    nav.querySelectorAll("button").forEach(btn => {
+      btn.onclick = () => { state.tab = btn.dataset.tab; render(); };
+    });
+  }
+
+  function renderPanel() {
+    const thisMonth = monthKeyOf(todayStr());
+    const activeEvents = events.filter(e => e.status !== "iptal");
+    const monthlyRevenue = activeEvents.filter(e => monthKeyOf(e.date) === thisMonth)
+      .reduce((s, e) => s + (Number(e.totalAmount) || 0), 0);
+    const monthlyCash = activeEvents.filter(e => monthKeyOf(e.date) === thisMonth)
+      .reduce((s, e) => s + (Number(e.deposit) || 0) + totalPayments(e), 0);
+    const pendingTotal = activeEvents.reduce((s, e) => s + Math.max(0, remainingOf(e)), 0);
+
+    const today = todayStr();
+    const soon = addDays(today, 7);
+    const upcoming = activeEvents.filter(e => e.date >= today && e.date <= soon)
+      .sort((a, b) => (a.date + a.timeStart).localeCompare(b.date + b.timeStart));
+
+    const conflicts = allConflictWarnings();
+    const stockWarnings = stockWarningsFor(events.filter(e => ACTIVE_STATUSES.includes(e.status)));
+
+    return `
+      <div class="grid3">
+        <div class="stat good"><div class="label">Bu Ayki Toplam Ciro</div><div class="value">${fmtMoney(monthlyRevenue)}</div></div>
+        <div class="stat"><div class="label">Kasaya Giren Nakit (Bu Ay)</div><div class="value">${fmtMoney(monthlyCash)}</div></div>
+        <div class="stat warn"><div class="label">Bekleyen Alacak (Toplam)</div><div class="value">${fmtMoney(pendingTotal)}</div></div>
+      </div>
+      <div class="card">
+        <h3>⚠️ Çakışma Uyarıları</h3>
+        ${conflicts.critical.map(w => `<div class="alert bad">${w}</div>`).join("")}
+        ${conflicts.info.map(w => `<div class="alert info">${w}</div>`).join("")}
+        ${(!conflicts.critical.length && !conflicts.info.length) ? `<div class="empty">Şu an çakışan bir etkinlik yok.</div>` : ""}
+      </div>
+      ${stockWarnings.length ? `
+      <div class="card">
+        <h3>📦 Stok Uyarıları</h3>
+        ${stockWarnings.map(w => `<div class="alert bad">${w}</div>`).join("")}
+      </div>` : ""}
+      <div class="card">
+        <h3>📅 Önümüzdeki 7 Gün</h3>
+        ${upcoming.length ? upcoming.map(renderEventRow).join("") : `<div class="empty">Önümüzdeki 7 günde etkinlik yok.</div>`}
+      </div>
+    `;
+  }
+
+  function renderEventRow(e) {
+    const dc = fmtDateShort(e.date);
+    const rem = remainingOf(e);
+    const balClass = rem > 0 ? "pos" : (rem < 0 ? "neg" : "zero");
+    const balLabel = rem > 0 ? fmtMoney(rem) + " alacak" : (rem < 0 ? fmtMoney(Math.abs(rem)) + " fazla ödendi" : "Ödendi");
+    return `
+      <div class="event-row" data-open="${e.id}">
+        <div class="date-chip"><b>${dc.day}</b>${dc.mon}<br>${dc.dow}</div>
+        <div class="main">
+          <div class="name">${esc(e.coupleNames || "İsimsiz")}</div>
+          <div class="meta">${e.timeStart || "--:--"}–${e.timeEnd || "--:--"} · ${esc(e.venue || "Mekan girilmedi")}</div>
+        </div>
+        <span class="badge ${e.status || "opsiyon"}">${STATUS[e.status] || "Opsiyonlu"}</span>
+        <span class="balance ${balClass}">${balLabel}</span>
+        <button class="btn small row-contract-btn" data-contract="${e.id}" title="Sözleşme Oluştur / Yazdır">📄</button>
+        <button class="btn small row-contract-btn" data-fieldslip="${e.id}" title="Saha Çıkış Fişi (Yazdır)">🚚</button>
+      </div>
+    `;
+  }
+
+  function eventMatchesQuery(e, q) {
+    const haystacks = [
+      e.coupleNames, e.phone, e.venue, e.theme, e.team, e.notes, e.contractNote
+    ];
+    if ((e.payments || []).some(p => trLower(p.note).includes(q))) return true;
+    if ((e.inventory || []).some(i => trLower(i.name).includes(q))) return true;
+    if ((e.hizmetDetaylari || []).some(h => trLower(h.label).includes(q) || trLower(h.value).includes(q))) return true;
+    return haystacks.some(f => trLower(f).includes(q));
+  }
+
+  function renderEtkinlikler() {
+    const q = trLower(state.search.trim());
+    let list = events.filter(e => e.status !== "tamamlandi" && e.status !== "iptal");
+    if (q) {
+      list = list.filter(e => eventMatchesQuery(e, q));
+    }
+    list.sort((a, b) => (a.date + (a.timeStart||"")).localeCompare(b.date + (b.timeStart||"")));
+    return `
+      <input class="search" id="searchInput" placeholder="İsim, telefon, mekan, tema, ekip, not veya malzemeye göre ara…" value="${esc(state.search)}">
+      <div class="card">
+        <h3>Aktif Etkinlikler (${list.length})</h3>
+        ${list.length ? list.map(renderEventRow).join("") : `<div class="empty">Kayıt bulunamadı.</div>`}
+      </div>
+    `;
+  }
+
+  function stockRowHtml(item, idx) {
+    return `
+      <div class="inv-row" data-sidx="${idx}">
+        <input type="text" class="stock-name" value="${esc(item.name)}" placeholder="Malzeme adı (örn: Napolyon sandalye)">
+        <input type="number" class="stock-total" value="${item.total || 0}" min="0" placeholder="Toplam adet" style="width:100px;">
+        <button class="btn small danger" data-remove-stock="${idx}" type="button">✕</button>
+      </div>
+    `;
+  }
+
+  function renderEnvanter() {
+    const list = events.filter(e => ACTIVE_STATUSES.includes(e.status))
+      .sort((a, b) => (a.date + (a.timeStart||"")).localeCompare(b.date + (b.timeStart||"")));
+    const warnings = stockWarningsFor(list);
+    const stockCard = `
+      <div class="card">
+        <h3>📦 Depo Stok Tanımları</h3>
+        <div id="stockRows">
+          ${stock.length ? stock.map(stockRowHtml).join("") : `<div class="empty">Henüz kritik malzeme/stok tanımlanmadı. Aşağıdan ekleyin.</div>`}
+        </div>
+        <button class="btn small" id="btnAddStock" type="button">+ Malzeme Tanımla</button>
+        ${warnings.length ? warnings.map(w => `<div class="alert bad" style="margin-top:10px;">${w}</div>`).join("") : (stock.length ? `<div class="empty" style="margin-top:8px;">Şu an tanımlı malzemelerde stok aşımı yok.</div>` : "")}
+      </div>
+    `;
+    if (!list.length) return stockCard + `<div class="card"><div class="empty">Envanter takibi yapılacak aktif etkinlik yok.</div></div>`;
+    return stockCard + list.map(e => {
+      const inv = e.inventory || [];
+      return `
+        <div class="card">
+          <h3>${esc(e.coupleNames || "İsimsiz")} — ${fmtDateHuman(e.date)} · <span class="badge ${e.status}">${STATUS[e.status]}</span></h3>
+          ${inv.length ? `
+            <table style="width:100%; border-collapse:collapse; font-size:13px;">
+              <thead><tr style="color:var(--text-dim); text-align:left;">
+                <th style="padding:4px 6px;">Malzeme</th><th style="padding:4px 6px;">Adet</th>
+                <th style="padding:4px 6px;">Yüklendi</th><th style="padding:4px 6px;">Sahada</th><th style="padding:4px 6px;">Depoya Döndü</th>
+              </tr></thead>
+              <tbody>
+                ${inv.map((item, idx) => `
+                  <tr style="border-top:1px solid var(--border);">
+                    <td style="padding:6px;">${esc(item.name)}</td>
+                    <td style="padding:6px;">${esc(item.qty || "")}</td>
+                    <td style="padding:6px;"><input type="checkbox" data-inv="${e.id}|${idx}|loaded" ${item.loaded ? "checked" : ""}></td>
+                    <td style="padding:6px;"><input type="checkbox" data-inv="${e.id}|${idx}|deployed" ${item.deployed ? "checked" : ""}></td>
+                    <td style="padding:6px;"><input type="checkbox" data-inv="${e.id}|${idx}|returned" ${item.returned ? "checked" : ""}></td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          ` : `<div class="empty">Bu etkinlik için malzeme listesi girilmemiş. Düzenlemek için etkinliğe tıklayın.</div>`}
+          <div style="margin-top:8px;"><button class="btn small" data-open="${e.id}">Etkinliği Düzenle</button></div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  function renderArsiv() {
+    const list = events.filter(e => e.status === "tamamlandi" || e.status === "iptal")
+      .sort((a, b) => (b.date + (b.timeStart||"")).localeCompare(a.date + (a.timeStart||"")));
+    return `
+      <div class="card">
+        <h3>Geçmiş / İptal Edilen İşler (${list.length})</h3>
+        ${list.length ? list.map(renderEventRow).join("") : `<div class="empty">Arşivde kayıt yok.</div>`}
+      </div>
+    `;
+  }
+
+  function bindContentEvents() {
+    document.querySelectorAll("[data-open]").forEach(el => {
+      el.onclick = (ev) => {
+        if (ev.target.tagName === "INPUT") return;
+        if (ev.target.closest("[data-contract]")) return;
+        if (ev.target.closest("[data-fieldslip]")) return;
+        openModal("edit", el.dataset.open);
+      };
+    });
+    document.querySelectorAll("[data-contract]").forEach(btn => {
+      btn.onclick = (ev) => {
+        ev.stopPropagation();
+        quickGenerateContract(btn.dataset.contract);
+      };
+    });
+    document.querySelectorAll("[data-fieldslip]").forEach(btn => {
+      btn.onclick = (ev) => {
+        ev.stopPropagation();
+        quickGenerateFieldSlip(btn.dataset.fieldslip);
+      };
+    });
+    const searchInput = document.getElementById("searchInput");
+    if (searchInput) {
+      searchInput.oninput = () => { state.search = searchInput.value; renderList_(); };
+    }
+    document.querySelectorAll("[data-inv]").forEach(cb => {
+      cb.onchange = () => {
+        const [eventId, idx, field] = cb.dataset.inv.split("|");
+        const ev = events.find(e => e.id === eventId);
+        if (!ev) return;
+        const inv = (ev.inventory || []).map(x => ({ ...x }));
+        inv[Number(idx)][field] = cb.checked;
+        updateInventory(eventId, inv);
+      };
+    });
+    const btnAddStock = document.getElementById("btnAddStock");
+    if (btnAddStock) {
+      btnAddStock.onclick = () => {
+        stock.push({ name: "", total: 0 });
+        persistStock();
+        render();
+      };
+    }
+    document.querySelectorAll("[data-remove-stock]").forEach(btn => {
+      btn.onclick = () => {
+        stock.splice(Number(btn.dataset.removeStock), 1);
+        persistStock();
+        render();
+      };
+    });
+    document.querySelectorAll(".stock-name, .stock-total").forEach(input => {
+      input.onchange = () => {
+        const row = input.closest("[data-sidx]");
+        const idx = Number(row.dataset.sidx);
+        if (!stock[idx]) return;
+        stock[idx].name = row.querySelector(".stock-name").value;
+        stock[idx].total = Number(row.querySelector(".stock-total").value) || 0;
+        persistStock();
+        render();
+      };
+    });
+  }
+
+  function renderList_() {
+    const content = document.getElementById("content");
+    content.innerHTML = renderEtkinlikler();
+    bindContentEvents();
+    const si = document.getElementById("searchInput");
+    if (si) { si.focus(); si.setSelectionRange(si.value.length, si.value.length); }
+  }
+
+  function blankDraft() {
+    return {
+      id: null,
+      coupleNames: "", phone: "", venue: "", theme: "",
+      date: todayStr(), timeStart: "18:00", timeEnd: "23:00",
+      status: "opsiyon",
+      totalAmount: 0, deposit: 0, payments: [],
+      team: "", notes: "",
+      inventory: [],
+      hizmetDetaylari: DEFAULT_HIZMET_KALEMLERI.map(label => ({ label, value: "" })),
+      contractNote: DEFAULT_CONTRACT_NOTE,
+      contractHistory: []
+    };
+  }
+
+  function openModal(mode, eventId) {
+    let draft;
+    if (mode === "edit") {
+      const ev = events.find(e => e.id === eventId);
+      if (!ev) return;
+      draft = JSON.parse(JSON.stringify(ev));
+      draft.inventory = (draft.inventory || []).map(x => ({ ...x }));
+    } else {
+      draft = blankDraft();
+    }
+    state.modal = { mode, draft };
+    renderModal();
+  }
+  function closeModal() { state.modal = null; renderModal(); }
+
+  function renderModal() {
+    const root = document.getElementById("modalRoot");
+    if (!state.modal) { root.innerHTML = ""; return; }
+    const d = state.modal.draft;
+    const isNew = state.modal.mode === "new";
+    const conflicts = findConflicts(d, d.id);
+    const remaining = remainingOf(d);
+    // Bu taslağın stoktan düşümünü, aynı tarihteki diğer aktif etkinliklerle birlikte hesapla
+    // (kendi eski hali varsa mükerrer saymamak için excludeId ile dışarıda bırakılıyor).
+    const othersForStock = events.filter(e => e.id !== d.id && ACTIVE_STATUSES.includes(e.status));
+    const draftCountsForStock = ACTIVE_STATUSES.includes(d.status) ? [d] : [];
+    const stockShortages = stockShortagesFor([...othersForStock, ...draftCountsForStock])
+      .filter(s => s.date === d.date);
+
+    root.innerHTML = `
+      <div class="overlay" id="overlayBg">
+        <div class="modal modal-wrap">
+          <button class="close-x" id="btnCloseModal">✕</button>
+          <h2>${isNew ? "Yeni Etkinlik" : "Etkinlik Düzenle"}</h2>
+
+          <div class="section-title">Genel Bilgiler</div>
+          <div class="field"><label>Gelin & Damat / Müşteri Adı</label>
+            <input id="f_coupleNames" type="text" value="${esc(d.coupleNames)}" placeholder="Örn: Ayşe & Mehmet"></div>
+          <div class="row2">
+            <div class="field"><label>Telefon</label><input id="f_phone" type="text" value="${esc(d.phone)}"></div>
+            <div class="field"><label>Mekan</label><input id="f_venue" type="text" value="${esc(d.venue)}"></div>
+          </div>
+          <div class="row2">
+            <div class="field"><label>Konsept / Tema Rengi</label><input id="f_theme" type="text" value="${esc(d.theme)}" placeholder="Örn: Beyaz-Altın Rustik"></div>
+            <div class="field"><label>Durum</label>
+              <select id="f_status">
+                ${Object.entries(STATUS).map(([k,v]) => `<option value="${k}" ${d.status===k?"selected":""}>${v}</option>`).join("")}
+              </select>
+            </div>
+          </div>
+          <div class="row3">
+            <div class="field"><label>Tarih</label><input id="f_date" type="date" value="${esc(d.date)}"></div>
+            <div class="field"><label>Başlangıç Saati</label><input id="f_timeStart" type="time" value="${esc(d.timeStart)}"></div>
+            <div class="field"><label>Bitiş Saati</label><input id="f_timeEnd" type="time" value="${esc(d.timeEnd)}"></div>
+          </div>
+          ${conflicts.map(c => {
+            const hasSharedTeam = (c.sharedTeam || []).length > 0;
+            const isCritical = c.sameVenue || hasSharedTeam;
+            let label;
+            if (c.sameVenue) label = "Kritik – Aynı Mekan Çakışması";
+            else if (hasSharedTeam) label = `Kritik – Aynı Ekip/Araç Çakışması (${c.sharedTeam.map(esc).join(", ")})`;
+            else label = "Bilgi – Farklı Mekan / İkinci İş";
+            return `
+            <div class="alert ${isCritical ? "bad" : "info"}">${label}:
+            ${fmtDateHuman(d.date)} günü ${c.timeStart||"?"}–${c.timeEnd||"?"} arası
+            "${esc(c.coupleNames || "İsimsiz")}" (${esc(c.venue||"mekan yok")}) etkinliği var.</div>
+          `;}).join("")}
+
+          <div class="section-title">Finans</div>
+          <div class="row2">
+            <div class="field"><label>Toplam Anlaşılan Tutar (₺)</label><input id="f_totalAmount" type="text" inputmode="numeric" placeholder="Örn: 26000 veya 26.000" value="${esc(fmtAmountForInput(d.totalAmount))}"></div>
+            <div class="field"><label>Alınan Kapora (₺)</label><input id="f_deposit" type="text" inputmode="numeric" placeholder="Örn: 5000 veya 5.000" value="${esc(fmtAmountForInput(d.deposit))}"></div>
+          </div>
+          <label style="display:block; font-size:12px; color:var(--text-dim); margin-bottom:4px;">Ödeme Günlüğü (kına, düğün günü, elden vb. her ödemeyi ayrı satır olarak ekleyin)</label>
+          <div id="paymentRows">
+            ${(d.payments || []).map((p, idx) => paymentRowHtml(p, idx)).join("") || `<div class="empty">Henüz ek ödeme kaydı yok.</div>`}
+          </div>
+          <button class="btn small" id="btnAddPayment" type="button">+ Ödeme Ekle</button>
+          <div class="balance-box" id="balanceBox">Kalan Bakiye: <b>${fmtMoney(remaining)}</b>${remaining < 0 ? " (fazla ödeme / iade edilecek)" : ""}</div>
+
+          <div class="section-title">Hizmet Detayları (Sözleşme İçin)</div>
+          <div id="hizRows">
+            ${(d.hizmetDetaylari || []).map((item, idx) => hizmetRowHtml(item, idx)).join("") || `<div class="empty">Henüz hizmet kalemi eklenmedi.</div>`}
+          </div>
+          <button class="btn small" id="btnAddHiz" type="button">+ Hizmet Kalemi Ekle</button>
+          <div class="field" style="margin-top:10px;">
+            <label>Sözleşme Notu</label>
+            <textarea id="f_contractNote" rows="2">${esc(d.contractNote != null ? d.contractNote : DEFAULT_CONTRACT_NOTE)}</textarea>
+          </div>
+          <button class="btn" id="btnContract" type="button">📄 Sözleşme Oluştur / Yazdır (PDF)</button>
+          <div style="font-size:11.5px; color:var(--text-dim); margin-top:5px;">Bu butona basıldığında etkinlik bilgileri otomatik kaydedilir ve o anki hâliyle numaralı bir sözleşme kaydı oluşturulur.</div>
+          ${(d.contractHistory || []).length ? `
+            <div style="margin-top:10px;">
+              <label style="display:block; font-size:12px; color:var(--text-dim); margin-bottom:4px;">Sözleşme Geçmişi</label>
+              ${(d.contractHistory || []).slice().reverse().map(s => `
+                <div class="inv-row" style="justify-content:space-between;">
+                  <span style="font-size:13px;">No ${s.no} — ${new Date(s.createdAt).toLocaleString("tr-TR", {day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"})}</span>
+                  <button class="btn small" data-view-contract="${s.id}" type="button">Görüntüle / Yazdır</button>
+                </div>
+              `).join("")}
+            </div>
+          ` : ""}
+
+          <div class="section-title">Saha / Envanter Listesi</div>
+          <div id="invRows">
+            ${(d.inventory || []).map((item, idx) => invRowHtml(item, idx)).join("")}
+          </div>
+          <button class="btn small" id="btnAddInv">+ Malzeme Ekle</button>
+          ${stockShortages.map(s => `<div class="alert bad" style="margin-top:8px;">${formatShortage(s)}</div>`).join("")}
+          <div style="margin-top:10px;">
+            <button class="btn small" id="btnFieldSlip" type="button">🚚 Saha Çıkış Fişi (Yazdır / PDF)</button>
+          </div>
+
+          <div class="section-title">Ekip & Notlar</div>
+          <div class="field"><label>Görevli Ekip / Araç / Ekipman (virgülle ayırın)</label><input id="f_team" type="text" value="${esc(d.team)}" placeholder="Örn: Ali (sorumlu), Zeynep, Minibüs-34ABC123"></div>
+          <div style="font-size:11px; color:var(--text-dim); margin:-6px 0 11px;">Buraya yazılan isimler aynı gün başka bir etkinlikte de geçiyorsa (aynı fotoğrafçı, aynı araç vb.) mekan farklı olsa bile kritik çakışma olarak uyarılırsınız.</div>
+          <div class="field"><label>Özel İstekler / Notlar</label><textarea id="f_notes" rows="3">${esc(d.notes)}</textarea></div>
+
+          <div class="modal-actions">
+            <div>${!isNew ? `<button class="btn danger" id="btnDelete">Sil</button>` : ""}</div>
+            <div class="right">
+              <button class="btn" id="btnCancel">Vazgeç</button>
+              <button class="btn primary" id="btnSave">Kaydet</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    bindModalEvents();
+  }
+
+  function paymentRowHtml(p, idx) {
+    return `
+      <div class="inv-row" data-pidx="${idx}">
+        <input type="date" class="pay-date" value="${esc(p.date || "")}" style="flex:0 0 140px;">
+        <input type="text" inputmode="numeric" class="pay-amount" value="${esc(fmtAmountForInput(p.amount))}" placeholder="Tutar (₺)" style="width:110px;">
+        <input type="text" class="pay-note" value="${esc(p.note || "")}" placeholder="Not (örn: Kına gecesi elden)">
+        <button class="btn small danger" data-remove-payment="${idx}" type="button">✕</button>
+      </div>
+    `;
+  }
+  function hizmetRowHtml(item, idx) {
+    return `
+      <div class="inv-row" data-hidx="${idx}">
+        <input type="text" class="hiz-label" value="${esc(item.label)}" placeholder="Kalem (örn: Zemin)" style="flex:1;">
+        <input type="text" class="hiz-value" value="${esc(item.value)}" placeholder="Açıklama (örn: Yer Brandası)" style="flex:1.4;">
+        <button class="btn small danger" data-remove-hiz="${idx}" type="button">✕</button>
+      </div>
+    `;
+  }
+  function invRowHtml(item, idx) {
+    return `
+      <div class="inv-row" data-idx="${idx}">
+        <input type="text" class="inv-name" value="${esc(item.name)}" placeholder="Malzeme adı">
+        <input type="number" class="inv-qty" value="${item.qty || 0}" min="0">
+        <label class="chk"><input type="checkbox" class="inv-loaded" ${item.loaded?"checked":""}> Yüklendi</label>
+        <label class="chk"><input type="checkbox" class="inv-deployed" ${item.deployed?"checked":""}> Sahada</label>
+        <label class="chk"><input type="checkbox" class="inv-returned" ${item.returned?"checked":""}> Döndü</label>
+        <button class="btn small danger" data-remove-inv="${idx}">✕</button>
+      </div>
+    `;
+  }
+
+  function readFormIntoDraft() {
+    const d = state.modal.draft;
+    d.coupleNames = val("f_coupleNames");
+    d.phone = val("f_phone");
+    d.venue = val("f_venue");
+    d.theme = val("f_theme");
+    d.status = val("f_status");
+    d.date = val("f_date");
+    d.timeStart = val("f_timeStart");
+    d.timeEnd = val("f_timeEnd");
+    const totalParsed = parseMoneyInput(val("f_totalAmount"));
+    d.totalAmount = Number.isFinite(totalParsed) ? totalParsed : d.totalAmount;
+    const depositParsed = parseMoneyInput(val("f_deposit"));
+    d.deposit = Number.isFinite(depositParsed) ? depositParsed : d.deposit;
+    d.team = val("f_team");
+    d.notes = val("f_notes");
+    d.contractNote = val("f_contractNote");
+    const hizRows = document.querySelectorAll("#hizRows .inv-row");
+    d.hizmetDetaylari = Array.from(hizRows).map(row => ({
+      label: row.querySelector(".hiz-label").value,
+      value: row.querySelector(".hiz-value").value,
+    }));
+    const payRows = document.querySelectorAll("#paymentRows .inv-row");
+    d.payments = Array.from(payRows).map((row, idx) => {
+      const parsed = parseMoneyInput(row.querySelector(".pay-amount").value);
+      const prev = (d.payments && d.payments[idx]) ? Number(d.payments[idx].amount) || 0 : 0;
+      return {
+        date: row.querySelector(".pay-date").value,
+        amount: Number.isFinite(parsed) ? parsed : prev,
+        note: row.querySelector(".pay-note").value,
+      };
+    });
+    const rows = document.querySelectorAll("#invRows .inv-row");
+    d.inventory = Array.from(rows).map(row => ({
+      name: row.querySelector(".inv-name").value,
+      qty: Number(row.querySelector(".inv-qty").value) || 0,
+      loaded: row.querySelector(".inv-loaded").checked,
+      deployed: row.querySelector(".inv-deployed").checked,
+      returned: row.querySelector(".inv-returned").checked,
+    }));
+  }
+  function val(id) {
+    const el = document.getElementById(id);
+    return el ? el.value : "";
+  }
+
+  function bindModalEvents() {
+    document.getElementById("overlayBg").onclick = (e) => { if (e.target.id === "overlayBg") closeModal(); };
+    document.getElementById("btnCloseModal").onclick = closeModal;
+    document.getElementById("btnCancel").onclick = closeModal;
+    ["f_date","f_timeStart","f_timeEnd","f_status"].forEach(id => {
+      document.getElementById(id).onchange = () => { readFormIntoDraft(); renderModal(); };
+    });
+    // Tutar/kapora her tuş vuruşunda Kalan Bakiye kutusunu güncellemeli (oninput), ama modalın
+    // tamamını yeniden çizmek (renderModal) imleci input'un sonuna sıçratır. Bu yüzden burada
+    // sadece draft'ı güncelleyip #balanceBox'ın içeriğini hedefli olarak yeniliyoruz.
+    ["f_totalAmount", "f_deposit"].forEach(id => {
+      document.getElementById(id).oninput = () => {
+        const d = state.modal.draft;
+        // Yazma sırasında ("1.500," gibi) geçici olarak geçersiz/ayrıştırılamaz bir metin
+        // oluşabilir; bu durumda draft'ı sıfırlamak yerine son geçerli sayıyı koruyoruz —
+        // kutu anlık olarak "eski" değeri gösterir ama asla sessizce 0'a düşmez.
+        const totalParsed = parseMoneyInput(val("f_totalAmount"));
+        if (Number.isFinite(totalParsed)) d.totalAmount = totalParsed;
+        const depositParsed = parseMoneyInput(val("f_deposit"));
+        if (Number.isFinite(depositParsed)) d.deposit = depositParsed;
+        const remaining = remainingOf(d);
+        const box = document.getElementById("balanceBox");
+        if (box) {
+          box.innerHTML = `Kalan Bakiye: <b>${fmtMoney(remaining)}</b>${remaining < 0 ? " (fazla ödeme / iade edilecek)" : ""}`;
+        }
+      };
+    });
+    document.querySelectorAll("#invRows .inv-name, #invRows .inv-qty").forEach(input => {
+      input.onchange = () => { readFormIntoDraft(); renderModal(); };
+    });
+    document.getElementById("btnAddInv").onclick = () => {
+      readFormIntoDraft();
+      state.modal.draft.inventory.push({ name: "", qty: 1, loaded: false, deployed: false, returned: false });
+      renderModal();
+    };
+    document.querySelectorAll("[data-remove-inv]").forEach(btn => {
+      btn.onclick = () => {
+        readFormIntoDraft();
+        state.modal.draft.inventory.splice(Number(btn.dataset.removeInv), 1);
+        renderModal();
+      };
+    });
+    document.getElementById("btnAddHiz").onclick = () => {
+      readFormIntoDraft();
+      state.modal.draft.hizmetDetaylari.push({ label: "", value: "" });
+      renderModal();
+    };
+    document.querySelectorAll("[data-remove-hiz]").forEach(btn => {
+      btn.onclick = () => {
+        readFormIntoDraft();
+        state.modal.draft.hizmetDetaylari.splice(Number(btn.dataset.removeHiz), 1);
+        renderModal();
+      };
+    });
+    document.getElementById("btnContract").onclick = () => {
+      const moneyError = invalidMoneyFieldMessage();
+      if (moneyError) { alert(moneyError); return; }
+      readFormIntoDraft();
+      const d = state.modal.draft;
+      if (!d.coupleNames.trim()) { alert("Sözleşme oluşturmadan önce lütfen müşteri / gelin-damat adı girin."); return; }
+      saveEvent(d);
+      state.modal.mode = "edit";
+      const snapshot = addContractSnapshot(d);
+      renderModal();
+      openContractWindow(snapshot);
+    };
+    document.querySelectorAll("[data-view-contract]").forEach(btn => {
+      btn.onclick = () => {
+        const d = state.modal.draft;
+        const snapshot = (d.contractHistory || []).find(s => s.id === btn.dataset.viewContract);
+        if (snapshot) openContractWindow(snapshot);
+      };
+    });
+    document.getElementById("btnFieldSlip").onclick = () => {
+      const moneyError = invalidMoneyFieldMessage();
+      if (moneyError) { alert(moneyError); return; }
+      readFormIntoDraft();
+      const d = state.modal.draft;
+      if (!d.coupleNames.trim()) { alert("Saha çıkış fişi oluşturmadan önce lütfen müşteri / gelin-damat adı girin."); return; }
+      saveEvent(d);
+      state.modal.mode = "edit";
+      renderModal();
+      openFieldSlipWindow(d);
+    };
+    document.getElementById("btnAddPayment").onclick = () => {
+      readFormIntoDraft();
+      state.modal.draft.payments.push({ date: state.modal.draft.date || todayStr(), amount: 0, note: "" });
+      renderModal();
+    };
+    document.querySelectorAll("[data-remove-payment]").forEach(btn => {
+      btn.onclick = () => {
+        readFormIntoDraft();
+        state.modal.draft.payments.splice(Number(btn.dataset.removePayment), 1);
+        renderModal();
+      };
+    });
+    document.getElementById("btnSave").onclick = () => {
+      const moneyError = invalidMoneyFieldMessage();
+      if (moneyError) { alert(moneyError); return; }
+      readFormIntoDraft();
+      const d = state.modal.draft;
+      if (!d.coupleNames.trim()) { alert("Lütfen müşteri / gelin-damat adı girin."); return; }
+      saveEvent(d);
+      closeModal();
+    };
+    const delBtn = document.getElementById("btnDelete");
+    if (delBtn) {
+      delBtn.onclick = () => {
+        if (confirm("Bu organizasyonu ve tüm ödeme/sözleşme kayıtlarını silmek istediğinize emin misiniz? Silme sonrası birkaç saniye içinde \"Geri Al\" seçeneği çıkacak.")) {
+          deleteEvent(state.modal.draft.id);
+          closeModal();
+        }
+      };
+    }
+  }
+
+  loadEvents();
+  bindStaticEvents();
+  render();
+})();
+</script>
+</body>
+</html>

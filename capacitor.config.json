@@ -1,0 +1,6 @@
+{
+  "appId": "com.zeyna.organizasyon",
+  "appName": "Organizasyon Paneli",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}
