@@ -26,6 +26,11 @@ jobs:
       - name: Web dosyalarını senkronize et
         run: npx cap sync android
 
+      - name: Sabit imza anahtarını kur (güncellemelerde veri kaybını önler)
+        run: |
+          mkdir -p ~/.android
+          cp debug.keystore ~/.android/debug.keystore
+
       - name: Java kur
         uses: actions/setup-java@v4
         with:
